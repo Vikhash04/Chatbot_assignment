@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-R-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Chatbot Assignment</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/generative-ai/+esm"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        <h1>My Gemini Chatbot</h1>
+        <p>This app is for my college assignment. Built using the Gemini API and hosted on GitHub Pages.</p>
+
+        <div id="api-key-section">
+            <label for="api-key">Enter your Gemini API Key:</label>
+            <input type="password" id="api-key" placeholder="Enter your key here...">
+            <button id="start-chat-btn">Start Chat</button>
+            <p class="api-note">Your API key is only used in your browser and is never stored.</p>
+        </div>
+
+        <div id="chat-section" class="hidden">
+            <div id="chat-history">
+                <div class="chat-message bot">
+                    <p>Hello! I'm ready to chat. Ask me anything!</p>
+                </div>
+            </div>
+            <div id="chat-input">
+                <input type="text" id="user-prompt" placeholder="Type your message...">
+                <button id="send-btn">Send</button>
+            </div>
+            <div id="loading-indicator" class="hidden">
+                <p>Gemini is thinking...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
