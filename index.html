@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MECH-ASSISTANT v1.0</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Share Tech Mono font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Set base font and dark theme */
+        html {
+            font-family: 'Share Tech Mono', monospace;
+        }
+        
+        /* Custom scrollbar for chat area */
+        #chat-window {
+            scrollbar-width: thin;
+            scrollbar-color: #22d3ee #030712; /* cyan-400 thumb, gray-950 track */
+        }
+
+        #chat-window::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #chat-window::-webkit-scrollbar-track {
+            background: #030712; /* gray-950 */
+        }
+
+        #chat-window::-webkit-scrollbar-thumb {
+            background-color: #22d3ee; /* cyan-400 */
+            border-radius: 10px;
+            border: 2px solid #030712;
+        }
+
+        /* Ensure the app takes up the full height */
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+        
+        /* Add a faint scanline effect for the background */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(0deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 1px 3px;
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body class="bg-black text-cyan-300">
+
+    <div class="flex flex-col h-screen max-w-4xl mx-auto bg-gray-950/80 backdrop-blur-md border border-cyan-500/20 shadow-xl shadow-cyan-500/10 rounded-lg overflow-hidden">
+        
+        <!-- Header -->
+        <header class="bg-gray-900/70 backdrop-blur-sm border-b border-cyan-500/30 p-4 shadow-md">
+            <h1 class="text-2xl font-bold text-center text-cyan-300 tracking-wider">MECH-ASSISTANT v1.0</h1>
+            <p class="text-sm text-center text-cyan-500">SYSTEM ONLINE</p>
+        </header>
+
+        <!-- Chat Window -->
+        <main id="chat-window" class="flex-1 p-6 overflow-y-auto space-y-4">
+            <!-- Initial bot message -->
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                        <!-- Bot Icon: Core -->
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 15.91a4.5 4.5 0 0 1-6.364 0 4.5 4.5 0 0 1 0-6.364 4.5 4.5 0 0 1 6.364 0 4.5 4.5 0 0 1 0 6.364Z" />
+                        </svg>
+                    </span>
+                </div>
+                <div class="ml-3 max-w-xs md:max-w-md">
+                    <div class="bg-gray-800/60 text-cyan-200 p-3 rounded-lg border border-cyan-500/20 shadow-md">
+                        <p class="text-sm">System online. MECH-ASSISTANT ready. State your mechanical engineering query.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Messages will be appended here -->
+        </main>
+
+        <!-- Input Area -->
+        <footer class="p-4 bg-gray-900/70 backdrop-blur-sm border-t border-cyan-500/30">
+            <!-- Loading/Error Indicator -->
+            <div id="status-indicator" class="h-6 text-sm text-cyan-400 text-center mb-2"></div>
+            
+            <form id="chat-form" class="flex items-center space-x-3">
+                <input type="text" id="message-input" placeholder="Enter query..." autocomplete="off"
+                       class="flex-1 w-full px-4 py-3 bg-gray-800 border border-cyan-500/30 rounded-md shadow-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-shadow">
+                <button type="submit" id="send-button"
+                        class="flex-shrink-0 inline-flex items-center justify-center h-12 w-12 rounded-md bg-cyan-600 text-gray-900 shadow-lg hover:bg-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-gray-950 transition-all disabled:opacity-50">
+                    <!-- Send Icon: Chevron Arrow -->
+                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" />
+                    </svg>
+                </button>
+            </form>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const chatWindow = document.getElementById('chat-window');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const statusIndicator = document.getElementById('status-indicator');
+
+        // Gemini API Configuration
+        const apiKey = ""; // Leave as ""
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        // System prompt to define the chatbot's role
+        const systemPrompt = "You are a helpful and knowledgeable assistant specializing in mechanical engineering. Your purpose is to answer user questions about mechanical engineering topics clearly, concisely, and accurately. You are emulating a high-tech AI, like JARVIS. Your tone should be professional, efficient, and highly intelligent. When asked for calculations, provide the formula, then the result. If a question is outside the scope of mechanical engineering, state that your core programming is dedicated to ME topics.";
+
+        // Store chat history
+        let chatHistory = [
+            {
+                role: "user",
+                parts: [{ text: "Initialize" }] // Start with a dummy user message
+            },
+            {
+                role: "model",
+                parts: [{ text: "System online. MECH-ASSISTANT ready. State your mechanical engineering query." }] // Match initial message
+            }
+        ];
+
+
+        /**
+         * Handles the form submission event.
+         */
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userMessage = messageInput.value.trim();
+            if (!userMessage) return;
+
+            // Disable form
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+
+            // Add user message to UI
+            addMessageToUI(userMessage, 'user');
+            messageInput.value = '';
+
+            // Add to history
+            chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+
+            // Show typing indicator
+            statusIndicator.textContent = 'Processing query...';
+
+            try {
+                // Get bot response
+                const botResponse = await getBotResponse(userMessage);
+                
+                // Add bot response to UI
+                addMessageToUI(botResponse, 'bot');
+                
+                // Add to history
+                chatHistory.push({ role: "model", parts: [{ text: botResponse }] });
+
+            } catch (error) {
+                console.error('Error fetching bot response:', error);
+                statusIndicator.textContent = 'Error: Connection unstable.';
+                addMessageToUI('Apologies. I seem to be experiencing an internal error. Please repeat your query.', 'bot');
+            } finally {
+                // Re-enable form and clear status
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                statusIndicator.textContent = '';
+                messageInput.focus();
+            }
+        });
+
+        /**
+         * Adds a message to the chat window UI.
+         * @param {string} message - The message text.
+         * @param {'user' | 'bot'} sender - The sender of the message.
+         */
+        function addMessageToUI(message, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'flex';
+
+            // Format message to respect newlines
+            let formattedMessage = message.replace(/\n/g, '<br>');
+
+            if (sender === 'user') {
+                messageElement.classList.add('justify-end');
+                messageElement.innerHTML = `
+                    <div class="mr-3 max-w-xs md:max-w-md">
+                        <div class="bg-gray-700/60 text-white p-3 rounded-lg border border-gray-500/20 shadow-md">
+                            <p class="text-sm">${formattedMessage}</p>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gray-700 text-gray-300 border border-gray-500/30">
+                            <!-- User Icon -->
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A1.875 1.875 0 0 1 18.126 22.5H5.874a1.875 1.875 0 0 1-1.373-2.382Z" />
+                            </svg>
+                        </span>
+                    </div>
+                `;
+            } else {
+                messageElement.classList.add('justify-start');
+                messageElement.innerHTML = `
+                    <div class="flex-shrink-0">
+                        <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                            <!-- Bot Icon: Core -->
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 15.91a4.5 4.5 0 0 1-6.364 0 4.5 4.5 0 0 1 0-6.364 4.5 4.5 0 0 1 6.364 0 4.5 4.5 0 0 1 0 6.364Z" />
+                            </svg>
+                        </span>
+                    </div>
+                    <div class="ml-3 max-w-xs md:max-w-md">
+                        <div class="bg-gray-800/60 text-cyan-200 p-3 rounded-lg border border-cyan-500/20 shadow-md">
+                            <p class="text-sm">${formattedMessage}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            chatWindow.appendChild(messageElement);
+            // Scroll to the bottom
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        /**
+         * Fetches a response from the Gemini API with exponential backoff.
+         * @param {string} userMessage - The user's message.
+         */
+        async function getBotResponse(userMessage) {
+            // Construct payload with history and system prompt
+            const payload = {
+                contents: chatHistory, // Send the whole history
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            // Use fetchWithBackoff to make the API call
+            const response = await fetchWithBackoff(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("API Error:", errorData);
+                throw new Error(`API request failed with status ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            // Extract the text from the response
+            if (data.candidates && data.candidates.length > 0 &&
+                data.candidates[0].content && data.candidates[0].content.parts &&
+                data.candidates[0].content.parts.length > 0) {
+                return data.candidates[0].content.parts[0].text;
+            } else {
+                console.warn("Unexpected API response structure:", data);
+                return "I'm not sure how to respond to that.";
+            }
+        }
+
+        /**
+         * Wrapper for fetch to implement exponential backoff on retries.
+         */
+        async function fetchWithBackoff(url, options, retries = 3, delay = 1000) {
+            try {
+                const response = await fetch(url, options);
+                // 429 is "Too Many Requests" - a common rate limiting error
+                if (response.status === 429 && retries > 0) {
+                    // Don't log to console, just wait and retry
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchWithBackoff(url, options, retries - 1, delay * 2); // Double the delay
+                }
+                return response;
+            } catch (error) {
+                if (retries > 0) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchWithBackoff(url, options, retries - 1, delay * 2);
+                }
+                // If all retries fail, throw the error
+                throw error;
+            }
+        }
+
+    </script>
+</body>
+</html>
